@@ -1,6 +1,7 @@
 import sys
 from PyQt5 import uic
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QLCDNumber
+from PyQt5.QtCore import QTime, QTimer
 
 
 class MyWidget(QMainWindow):
@@ -59,6 +60,22 @@ class MyWidget(QMainWindow):
         self.time_edit_1.addItems(LIST_OF_TIME_ZONES)
         self.time_edit_2.addItems(LIST_OF_TIME_ZONES)
         self.time_edit_3.addItems(LIST_OF_TIME_ZONES)
+
+        timer = QTimer(self)
+        timer.timeout.connect(self.showTime)
+        timer.start(1000)
+
+        self.showTime()
+
+    def showTime(self):
+        time = QTime.currentTime()
+        text = time.toString('hh:mm')
+        if (time.second() % 2) == 0:
+            text = text[:2] + ' ' + text[3:]
+
+        self.Time_1.display(text)
+        self.Time_2.display(text)
+        self.Time_3.display(text)
 
 
 app = QApplication(sys.argv)
