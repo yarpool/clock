@@ -2,6 +2,8 @@ import sys
 from PyQt5 import uic
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QLCDNumber
 from PyQt5.QtCore import QTime, QTimer
+from bs4 import BeautifulSoup
+from urllib.request import urlopen
 
 
 class MyWidget(QMainWindow):
@@ -68,10 +70,21 @@ class MyWidget(QMainWindow):
         self.showTime()
 
     def showTime(self):
-        time = QTime.currentTime()
-        text = time.toString('hh:mm')
-        if (time.second() % 2) == 0:
-            text = text[:2] + ' ' + text[3:]
+        try:
+            html_doc = urlopen(
+                'https://www.timeserver.ru/cities/ru/moscow').read()
+            soup = BeautifulSoup(html_doc, "html.parser")
+
+            time = soup.find('div', 'timeview-data')
+            parse_list = time.find_all('span', {})
+            hours = parse_list[0].text
+            minutes = parse_list[2].text
+            text = hours + ' ' + minutes
+        except Exception:
+            time = QTime.currentTime()
+            text = time.toString('hh:mm')
+            if (time.second() % 2) == 0:
+                text = text[:2] + ' ' + text[3:]
 
         self.Time_1.display(text)
         self.Time_2.display(text)
