@@ -1,6 +1,6 @@
 import sys
 from PyQt5 import uic
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QLCDNumber
+from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5.QtCore import QTime, QTimer
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
@@ -119,7 +119,6 @@ class MyWidget(QMainWindow):
         return text
 
     def check_time_zone(self, text, time_zone):
-
         if time_zone == '(UTC−12)':
             text = str(int(text[:2]) + 9) + text[2:]
 
@@ -171,10 +170,10 @@ class MyWidget(QMainWindow):
             text = str(int(text[:2]) + 23) + text[2:]
 
         elif time_zone == 'московское время (UTC+3)':
-            text = str(int(text[:2])) + text[2:]
+            text = text
 
         elif time_zone == 'Иран (UTC+3:30)':
-            text = str(int(text[:2])) + text[2] + str(int(text[3:]) + 30)
+            text = text[:3] + str(int(text[3:]) + 30)
 
         elif time_zone == 'самарское время (UTC+4)':
             text = str(int(text[:2]) + 1) + text[2:]
@@ -238,23 +237,26 @@ class MyWidget(QMainWindow):
         else:
             separator = ':'
 
-        if int(text[:2]) > 23:
-            try:
-                if int(text[:2]) - 24 < 10:
-                    text = '0' + str(int(text[:2]) - 24) + separator + \
-                        text[3:]
-                else:
-                    text = str(int(text[:2]) - 24) + separator + text[3:]
+        try:
+            int(text[2])
+            text = '0' + text
+        except Exception:
+            pass
 
-            except Exception as e:
-                print(str(e), text)
+        if int(text[:2]) > 23:
+            if int(text[:2]) - 24 < 10:
+                text = '0' + str(int(text[:2]) - 24) + separator + \
+                    text[3:]
+            else:
+                text = str(int(text[:2]) - 24) + separator + text[3:]
 
         if int(text[3:]) > 59:
             if int(text[3:]) - 60 < 10:
-                text = str(int(text[:2]) + 1) +\
+                text = str(int(text[:2]) + 1) + \
                     '0' + str(int(text[3:]) - 60)
             else:
-                text = str(int(text[:2]) + 1) + str(int(text[3:]) - 60)
+                text = str(int(text[:2]) + 1) + \
+                    separator + str(int(text[3:]) - 60)
 
         return text
 
