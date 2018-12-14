@@ -1,15 +1,17 @@
 import sys
 from PyQt5 import uic
-from PyQt5.QtWidgets import QApplication, QMainWindow
-from PyQt5.QtCore import QTime, QTimer
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
+from PyQt5.QtGui import *
+from pygame import mixer
 
 
 class MyWidget(QMainWindow):
 
     def __init__(self):
-
+        global alarm_minute, alarm_hour
         super().__init__()
         uic.loadUi('design.ui', self)
         LIST_OF_TIME_ZONES = ['(UTC−12)',
@@ -52,6 +54,7 @@ class MyWidget(QMainWindow):
                               'Тонга (UTC+13)',
                               'Кирибати (UTC+14)',
                               ]
+        alarm_minute, alarm_hour = '', ''
         self.time_zone1 = '(UTC−12)'
         self.time_zone2 = '(UTC−12)'
         self.time_zone3 = '(UTC−12)'
@@ -75,12 +78,35 @@ class MyWidget(QMainWindow):
 
         self.showTime()
 
+    def set_alarm(self):
+        try:
+            self.alarm_window = AlarmWindow(self)
+            self.alarm_window.show()
+        except Exception as e:
+            print(str(e))
+
     def showTime(self):
+        global alarm_minute, alarm_hour
         text = self.now_time()
 
         self.Time_1.display(self.check_time_zone(text, self.time_zone1))
         self.Time_2.display(self.check_time_zone(text, self.time_zone2))
         self.Time_3.display(self.check_time_zone(text, self.time_zone3))
+
+        self.alarm = QPushButton(self)
+        self.alarm.setText('Будильник')
+        self.alarm.move(30, 400)
+
+        self.alarm.clicked.connect(self.set_alarm)
+
+        if str(alarm_minute) == QTime.currentTime().toString('mm').lstrip('0') and\
+                str(alarm_hour) == QTime.currentTime().toString('hh').lstrip('0'):
+            alarm_minute, alarm_hour = '', ''
+            try:
+                self.reset_alarm_window = StopAlarmWindow(self)
+                self.reset_alarm_window.show()
+            except Exception as e:
+                print(str(e))
 
     def handleActivated_1(self, index):
         self.time_zone1 = (self.time_edit_1.itemText(index))
@@ -259,6 +285,65 @@ class MyWidget(QMainWindow):
                     separator + str(int(text[3:]) - 60)
 
         return text
+
+
+class AlarmWindow(QWidget):
+    def __init__(self, other):
+        super().__init__()
+        self.setGeometry(300, 300, 150, 100)
+        self.setWindowTitle('Будильник')
+
+        self.alarm_edit = QTimeEdit(self)
+        self.alarm_edit.move(30, 10)
+
+        self.alarm_set_button = QPushButton(self)
+        self.alarm_set_button.setText("Поставить")
+        self.alarm_set_button.resize(self.alarm_set_button.sizeHint())
+        self.alarm_set_button.move(28, 40)
+        self.alarm_set_button.clicked.connect(self.set_alarm)
+
+    def set_alarm(self):
+        global alarm_hour, alarm_minute
+        alarm_hour = self.alarm_edit.dateTime().time().hour()
+        alarm_minute = self.alarm_edit.dateTime().time().minute()
+        self.close()
+
+
+class StopAlarmWindow(QWidget):
+    def __init__(self, other):
+        super().__init__()
+        self.setGeometry(300, 300, 150, 100)
+
+        mixer.init()
+        mixer.music.load('music.mp3')
+        mixer.music.play()
+
+        self.alarm_reset_button = QPushButton(self)
+        self.alarm_reset_button.setText("Выключить")
+        self.alarm_reset_button.resize(self.alarm_reset_button.sizeHint())
+        self.alarm_reset_button.move(28, 10)
+        self.alarm_reset_button.clicked.connect(self.reset_alarm)
+
+        self.alarm_add_five_minute_button = QPushButton(self)
+        self.alarm_add_five_minute_button.setText("Добавить 5 минут")
+        self.alarm_add_five_minute_button.resize(
+            self.alarm_add_five_minute_button.sizeHint())
+        self.alarm_add_five_minute_button.move(28, 40)
+        self.alarm_add_five_minute_button.clicked.connect(self.add_five_minute)
+
+    def reset_alarm(self):
+        mixer.music.stop()
+        self.close()
+
+    def add_five_minute(self):
+        global alarm_hour, alarm_minute
+        mixer.music.stop()
+        alarm_hour = int(QTime.currentTime().toString('hh').lstrip('0'))
+        alarm_minute = int(QTime.currentTime().toString('mm').lstrip('0')) + 5
+        if alarm_minute > 59:
+            alarm_minute = 60 - alarm_minute
+            alarm_hour += 1
+        self.close()
 
 
 app = QApplication(sys.argv)
